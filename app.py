@@ -41,10 +41,8 @@ ydl_opts = {
         'preferredcodec': 'mp3',
         'preferredquality': '192',
     }],
-    'ffmpeg_location': 'ffmpeg',  # This will use FFmpeg from system PATH
+    'ffmpeg-location': './',
     'outtmpl': "./%(id)s.%(ext)s",
-    'quiet': True,
-    'no_warnings': True
 }
 
 # AssemblyAI endpoints
@@ -54,7 +52,7 @@ CHUNK_SIZE = 5242880
 
 # Streaming callback handler
 class StreamHandler(BaseCallbackHandler):
-    def __init__(self, container, initial_text=""):
+    def _init_(self, container, initial_text=""):
         self.container = container
         self.text = initial_text
         self.run_id_ignore_token = None
@@ -83,15 +81,6 @@ def get_streaming_chat_model(api_key, callback_handler=None):
         streaming=True,
         callbacks=[callback_handler] if callback_handler else None
     )
-
-# Function to check if FFmpeg is installed
-def check_ffmpeg():
-    try:
-        import subprocess
-        subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
-        return True
-    except (subprocess.SubprocessError, FileNotFoundError):
-        return False
 
 # Function to transcribe YouTube video
 @st.cache_data
@@ -166,44 +155,29 @@ def transcribe_from_link(link):
 # Sidebar configuration
 st.sidebar.image("https://framerusercontent.com/images/3Ca34Pogzn9I3a7uTsNSlfs9Bdk.png", use_container_width=True)
 with st.sidebar:
-    st.markdown("### 🎥 YouTube Video Chat")
+    st.title("🎥 YouTube Video Chat")
     
-    # Check FFmpeg installation
-    if not check_ffmpeg():
-        st.error("⚠️ FFmpeg is not installed. Please install FFmpeg to use this app.")
-        st.markdown("""
-        ### How to install FFmpeg:
-        1. **Windows**: 
-           - Download from [FFmpeg website](https://ffmpeg.org/download.html)
-           - Add to system PATH
-        2. **Mac**: 
-           - `brew install ffmpeg`
-        3. **Linux**: 
-           - `sudo apt install ffmpeg`
-        """)
-        st.stop()
+    # API Keys section
+    st.markdown("### API Keys")
+    st.markdown("Get your free API keys from:")
+    st.markdown("- [Sutra API](https://www.two.ai/sutra/api)")
+    st.markdown("- [AssemblyAI](https://www.assemblyai.com/)")
     
-    # API Keys section in expander
-    with st.expander("🔑 API Keys", expanded=False):
-        st.markdown("Get your free API keys from:")
-        st.markdown("- [Sutra API](https://www.two.ai/sutra/api)")
-        st.markdown("- [AssemblyAI](https://www.assemblyai.com/)")
-        
-        sutra_api_key = st.text_input("Sutra API Key:", type="password")
-        assembly_api_key = st.text_input("AssemblyAI API Key:", type="password")
+    sutra_api_key = st.text_input("Enter your Sutra API Key:", type="password")
+    assembly_api_key = st.text_input("Enter your AssemblyAI API Key:", type="password")
     
     # Language selector
-    selected_language = st.selectbox("🌐 Chat Language:", languages)
+    selected_language = st.selectbox("Select chat language:", languages)
     
-    # YouTube URL input
-    st.markdown("### 📺 Video Input")
-    youtube_url = st.text_input("YouTube URL:")
+    # YouTube URL input in sidebar
+    st.markdown("### Video Input")
+    youtube_url = st.text_input("Enter YouTube video URL:")
     
-    # Transcribe button
+    # Transcribe button in sidebar
     if youtube_url:
-        if st.button("🎬 Transcribe Video", use_container_width=True):
+        if st.button("Transcribe Video", use_container_width=True):
             if not assembly_api_key:
-                st.error("Please enter your AssemblyAI API key.")
+                st.error("Please enter your AssemblyAI API key in the sidebar.")
             else:
                 st.session_state.transcription_status = "processing"
                 try:
@@ -223,7 +197,7 @@ with st.sidebar:
                             status = polling_response.json()['status']
                             
                             # Update status display
-                            status_placeholder.info(f"Status: {status}")
+                            status_placeholder.info(f"Transcription status: {status}")
                             
                             if status == 'completed':
                                 st.session_state.transcript = polling_response.json()['text']
@@ -233,7 +207,7 @@ with st.sidebar:
                                 break
                             elif status == 'error':
                                 error_message = polling_response.json().get('error', 'Unknown error')
-                                st.error(f"Error: {error_message}")
+                                st.error(f"Transcription failed: {error_message}")
                                 st.session_state.transcription_status = "error"
                                 status_placeholder.empty()
                                 st.rerun()
@@ -244,23 +218,23 @@ with st.sidebar:
                             time.sleep(2)  # Wait 2 seconds before next poll
                             
                         except requests.exceptions.RequestException as e:
-                            st.error(f"Error: {str(e)}")
+                            st.error(f"Error during polling: {str(e)}")
                             st.session_state.transcription_status = "error"
                             status_placeholder.empty()
                             st.rerun()
                             break
                         
                 except Exception as e:
-                    st.error(f"Error: {str(e)}")
+                    st.error(f"Error during transcription: {str(e)}")
                     st.session_state.transcription_status = "error"
                     st.rerun()
     
     st.divider()
-    st.markdown(f"**Current Language:** {selected_language}")
+    st.markdown(f"Currently chatting in: {selected_language}")
 
 # Main content
 st.markdown(
-    f'<h1><img src="https://media.licdn.com/dms/image/v2/C4E0BAQFHAS8MQ9TuJg/company-logo_200_200/company-logo_200_200/0/1674673509083/assemblyai_logo?e=2147483647&v=beta&t=Kvp50eednKAzptWen58EjwigRKmjQZoK4lROa5OZxiY" width="50"/> Multilingual YouTube Chat<img src="https://gifdb.com/images/high/youtube-red-icon-78u4fsgfpf41nvsp.gif" width="100"/></h1>',
+    f'<h1><img src="https://framerusercontent.com/images/9vH8BcjXKRcC5OrSfkohhSyDgX0.png" width="60"/> YouTube Video Chat 🤖</h1>',
     unsafe_allow_html=True
 )
 
@@ -319,39 +293,39 @@ if st.session_state.transcript:
                 with st.chat_message("assistant"):
                     response_placeholder = st.empty()
                     
-                # Create a stream handler
-                stream_handler = StreamHandler(response_placeholder)
-                
-                # Get streaming model with handler
-                chat = get_streaming_chat_model(sutra_api_key, stream_handler)
-                
-                # Create system message with context
-                system_message = f"""You are a helpful assistant that answers questions about YouTube videos. Please respond in {selected_language}.
-                
-                IMPORTANT: Use ONLY the information from the video transcript below to answer questions. If the transcript doesn't contain the information needed to answer a question, say so instead of making assumptions.
-                
-                Video Transcript:
-                {st.session_state.transcript}
-                
-                Instructions:
-                1. Base your answers strictly on the video content
-                2. If asked about something not covered in the transcript, say "I don't have that information from the video"
-                3. Keep answers concise and relevant to the video content
-                4. Always respond in {selected_language}
-                """
-                
-                # Generate streaming response
-                messages = [
-                    SystemMessage(content=system_message),
-                    HumanMessage(content=user_input)
-                ]
-                
-                response = chat.invoke(messages)
-                answer = response.content
-                
-                # Add assistant response to chat history
-                st.session_state.messages.append({"role": "assistant", "content": answer})
+                    # Create a stream handler
+                    stream_handler = StreamHandler(response_placeholder)
                     
+                    # Get streaming model with handler
+                    chat = get_streaming_chat_model(sutra_api_key, stream_handler)
+                    
+                    # Create system message with context
+                    system_message = f"""You are a helpful assistant that answers questions about YouTube videos. Please respond in {selected_language}.
+                    
+                    IMPORTANT: Use ONLY the information from the video transcript below to answer questions. If the transcript doesn't contain the information needed to answer a question, say so instead of making assumptions.
+                    
+                    Video Transcript:
+                    {st.session_state.transcript}
+                    
+                    Instructions:
+                    1. Base your answers strictly on the video content
+                    2. If asked about something not covered in the transcript, say "I don't have that information from the video"
+                    3. Keep answers concise and relevant to the video content
+                    4. Always respond in {selected_language}
+                    """
+                    
+                    # Generate streaming response
+                    messages = [
+                        SystemMessage(content=system_message),
+                        HumanMessage(content=user_input)
+                    ]
+                    
+                    response = chat.invoke(messages)
+                    answer = response.content
+                    
+                    # Add assistant response to chat history
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
+                        
             except Exception as e:
                 st.error(f"Error: {str(e)}")
                 if "API key" in str(e):
