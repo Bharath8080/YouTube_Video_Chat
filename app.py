@@ -41,8 +41,10 @@ ydl_opts = {
         'preferredcodec': 'mp3',
         'preferredquality': '192',
     }],
-    'ffmpeg-location': './',
+    'ffmpeg_location': 'ffmpeg',  # This will use FFmpeg from system PATH
     'outtmpl': "./%(id)s.%(ext)s",
+    'quiet': True,
+    'no_warnings': True
 }
 
 # AssemblyAI endpoints
@@ -81,6 +83,15 @@ def get_streaming_chat_model(api_key, callback_handler=None):
         streaming=True,
         callbacks=[callback_handler] if callback_handler else None
     )
+
+# Function to check if FFmpeg is installed
+def check_ffmpeg():
+    try:
+        import subprocess
+        subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
+        return True
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return False
 
 # Function to transcribe YouTube video
 @st.cache_data
@@ -156,6 +167,21 @@ def transcribe_from_link(link):
 st.sidebar.image("https://framerusercontent.com/images/3Ca34Pogzn9I3a7uTsNSlfs9Bdk.png", use_container_width=True)
 with st.sidebar:
     st.markdown("### 🎥 YouTube Video Chat")
+    
+    # Check FFmpeg installation
+    if not check_ffmpeg():
+        st.error("⚠️ FFmpeg is not installed. Please install FFmpeg to use this app.")
+        st.markdown("""
+        ### How to install FFmpeg:
+        1. **Windows**: 
+           - Download from [FFmpeg website](https://ffmpeg.org/download.html)
+           - Add to system PATH
+        2. **Mac**: 
+           - `brew install ffmpeg`
+        3. **Linux**: 
+           - `sudo apt install ffmpeg`
+        """)
+        st.stop()
     
     # API Keys section in expander
     with st.expander("🔑 API Keys", expanded=False):
@@ -293,39 +319,39 @@ if st.session_state.transcript:
                 with st.chat_message("assistant"):
                     response_placeholder = st.empty()
                     
-                    # Create a stream handler
-                    stream_handler = StreamHandler(response_placeholder)
+                # Create a stream handler
+                stream_handler = StreamHandler(response_placeholder)
+                
+                # Get streaming model with handler
+                chat = get_streaming_chat_model(sutra_api_key, stream_handler)
+                
+                # Create system message with context
+                system_message = f"""You are a helpful assistant that answers questions about YouTube videos. Please respond in {selected_language}.
+                
+                IMPORTANT: Use ONLY the information from the video transcript below to answer questions. If the transcript doesn't contain the information needed to answer a question, say so instead of making assumptions.
+                
+                Video Transcript:
+                {st.session_state.transcript}
+                
+                Instructions:
+                1. Base your answers strictly on the video content
+                2. If asked about something not covered in the transcript, say "I don't have that information from the video"
+                3. Keep answers concise and relevant to the video content
+                4. Always respond in {selected_language}
+                """
+                
+                # Generate streaming response
+                messages = [
+                    SystemMessage(content=system_message),
+                    HumanMessage(content=user_input)
+                ]
+                
+                response = chat.invoke(messages)
+                answer = response.content
+                
+                # Add assistant response to chat history
+                st.session_state.messages.append({"role": "assistant", "content": answer})
                     
-                    # Get streaming model with handler
-                    chat = get_streaming_chat_model(sutra_api_key, stream_handler)
-                    
-                    # Create system message with context
-                    system_message = f"""You are a helpful assistant that answers questions about YouTube videos. Please respond in {selected_language}.
-                    
-                    IMPORTANT: Use ONLY the information from the video transcript below to answer questions. If the transcript doesn't contain the information needed to answer a question, say so instead of making assumptions.
-                    
-                    Video Transcript:
-                    {st.session_state.transcript}
-                    
-                    Instructions:
-                    1. Base your answers strictly on the video content
-                    2. If asked about something not covered in the transcript, say "I don't have that information from the video"
-                    3. Keep answers concise and relevant to the video content
-                    4. Always respond in {selected_language}
-                    """
-                    
-                    # Generate streaming response
-                    messages = [
-                        SystemMessage(content=system_message),
-                        HumanMessage(content=user_input)
-                    ]
-                    
-                    response = chat.invoke(messages)
-                    answer = response.content
-                    
-                    # Add assistant response to chat history
-                    st.session_state.messages.append({"role": "assistant", "content": answer})
-                        
             except Exception as e:
                 st.error(f"Error: {str(e)}")
                 if "API key" in str(e):
