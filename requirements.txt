@@ -1,0 +1,7 @@
+yt-dlp
+streamlit
+python-dotenv
+requests
+langchain
+langchain-openai
+ffmpeg-python
