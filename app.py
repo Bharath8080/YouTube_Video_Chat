@@ -156,10 +156,10 @@ with st.sidebar:
     # API Keys section in expander
     with st.expander("🔑 API Keys", expanded=False):
         st.markdown("Get your free API keys from:")
-        st.markdown("- [Sutra API](https://www.two.ai/sutra/api)")
+        st.markdown("- [SUTRA API](https://www.two.ai/sutra/api)")
         st.markdown("- [AssemblyAI](https://www.assemblyai.com/)")
         
-        sutra_api_key = st.text_input("Sutra API Key:", type="password")
+        sutra_api_key = st.text_input("SUTRA API Key:", type="password")
         assembly_api_key = st.text_input("AssemblyAI API Key:", type="password")
     
     # Language selector
@@ -274,7 +274,7 @@ if st.session_state.transcript:
     # Process user input
     if user_input:
         if not sutra_api_key:
-            st.error("Please enter your Sutra API key in the sidebar.")
+            st.error("Please enter your SUTRA API key in the sidebar.")
         else:
             # Add user message to chat
             st.session_state.messages.append({"role": "user", "content": user_input})
@@ -325,4 +325,4 @@ if st.session_state.transcript:
             except Exception as e:
                 st.error(f"Error: {str(e)}")
                 if "API key" in str(e):
-                    st.error("Please check your Sutra API key in the sidebar.")
+                    st.error("Please check your SUTRA API key in the sidebar.")
