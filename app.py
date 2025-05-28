@@ -78,15 +78,6 @@ def get_streaming_chat_model(api_key, callback_handler=None):
         callbacks=[callback_handler] if callback_handler else None
     )
 
-# Function to check if FFmpeg is installed
-def check_ffmpeg():
-    try:
-        import subprocess
-        subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
-        return True
-    except (subprocess.SubprocessError, FileNotFoundError):
-        return False
-
 # Function to transcribe YouTube video
 @st.cache_data
 def transcribe_from_link(link):
@@ -161,21 +152,6 @@ def transcribe_from_link(link):
 st.sidebar.image("https://framerusercontent.com/images/3Ca34Pogzn9I3a7uTsNSlfs9Bdk.png", use_container_width=True)
 with st.sidebar:
     st.markdown("### 🎥 YouTube Video Chat")
-    
-    # Check FFmpeg installation
-    if not check_ffmpeg():
-        st.error("⚠️ FFmpeg is not installed. Please install FFmpeg to use this app.")
-        st.markdown("""
-        ### How to install FFmpeg:
-        1. **Windows**: 
-           - Download from [FFmpeg website](https://ffmpeg.org/download.html)
-           - Add to system PATH
-        2. **Mac**: 
-           - `brew install ffmpeg`
-        3. **Linux**: 
-           - `sudo apt install ffmpeg`
-        """)
-        st.stop()
     
     # API Keys section in expander
     with st.expander("🔑 API Keys", expanded=False):
