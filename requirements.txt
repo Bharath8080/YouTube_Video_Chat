@@ -6,5 +6,6 @@ langchain
 langchain-openai
 ffmpeg-python
 langchain-community
+youtube-transcript-api
 ffmpeg
 python-ffmpeg
