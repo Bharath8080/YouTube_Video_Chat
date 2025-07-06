@@ -4,8 +4,8 @@ python-dotenv
 requests
 langchain
 langchain-openai
-ffmpeg-python
+#ffmpeg-python
 langchain-community
 youtube-transcript-api
-ffmpeg
-python-ffmpeg
+#ffmpeg
+#python-ffmpeg
